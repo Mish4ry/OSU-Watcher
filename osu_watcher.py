@@ -21,10 +21,6 @@ LOGO_B64 = "iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAIg0lEQVR4nO2cW4scRRTH
 
 ICO_B64 = "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"
 
-# ====================================================================
-# utils.py
-# ====================================================================
-
 INVALID_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
 
@@ -62,10 +58,6 @@ def format_size(n: int) -> str:
             return f"{n:.1f} {unit}"
         n /= 1024
     return f"{n:.1f} To"
-
-# ====================================================================
-# config.py
-# ====================================================================
 
 CONFIG_PATH = Path.home() / "AppData" / "Local" / "osu_tool" / "config.json"
 
@@ -137,9 +129,21 @@ def set_shortcuts(shortcuts: dict) -> None:
     cfg["shortcuts"] = shortcuts
     save(cfg)
 
-# ====================================================================
-# osu_path.py
-# ====================================================================
+
+class _CfgProxy:
+    load          = staticmethod(load)
+    save          = staticmethod(save)
+    get_replays_dest  = staticmethod(get_replays_dest)
+    get_bg_dest       = staticmethod(get_bg_dest)
+    get_shortcuts     = staticmethod(get_shortcuts)
+    set_replays_dest  = staticmethod(set_replays_dest)
+    set_bg_dest       = staticmethod(set_bg_dest)
+    set_osu_path      = staticmethod(set_osu_path)
+    set_shortcuts     = staticmethod(set_shortcuts)
+    def get(self, key, default=None):
+        return load().get(key, default)
+
+cfg = _CfgProxy()
 
 _root: list[Path | None] = [None]  # liste pour permettre la mutation depuis App
 
@@ -184,9 +188,16 @@ def get_replays_folder() -> Path | None:
 def get_songs_folder() -> Path | None:
     return (_root[0] / "Songs") if _root[0] else None
 
-# ====================================================================
-# scanner.py
-# ====================================================================
+
+class _OsuPathProxy:
+    detect            = staticmethod(detect)
+    init              = staticmethod(init)
+    get               = staticmethod(get)
+    set               = staticmethod(set)
+    get_replays_folder = staticmethod(get_replays_folder)
+    get_songs_folder  = staticmethod(get_songs_folder)
+
+osu_path = _OsuPathProxy()
 
 def get_map_info(osu_file: Path) -> tuple[Path | None, str]:
     """Extrait le chemin du fond d'écran et le nom de la beatmap depuis un .osu."""
@@ -287,10 +298,6 @@ def scan_backgrounds(
     log(f"→ {len(to_send)} background(s) to send\n")
     return to_send
 
-# ====================================================================
-# notifier.py
-# ====================================================================
-
 try:
     from win10toast import ToastNotifier
     _TOAST_OK = True
@@ -332,10 +339,6 @@ def notify(title: str, msg: str, duration: int = 4) -> None:
 
     threading.Thread(target=_do, daemon=True).start()
 
-# ====================================================================
-# theme.py
-# ====================================================================
-
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
@@ -347,10 +350,6 @@ BORDER = "#2A2A45"
 WHITE  = "#E8E8F0"
 DIM    = "#5050A0"
 ORANGE = "#FF8833"
-
-# ====================================================================
-# options_window.py
-# ====================================================================
 
 class OptionsWindow(ctk.CTkToplevel):
     def __init__(self, parent, on_forget_cb, on_shortcuts_saved_cb):
@@ -508,10 +507,6 @@ class OptionsWindow(ctk.CTkToplevel):
         self._on_shortcuts_saved()
         self._parent.log("✔  Shortcuts saved and applied.")
         self.destroy()
-
-# ====================================================================
-# app.py
-# ====================================================================
 
 try:
     import pystray
