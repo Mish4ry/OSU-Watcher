@@ -1,3 +1,41 @@
+# ── Bootstrap : vérifie et installe les dépendances avant tout ──────────────
+import sys, subprocess
+
+def _bootstrap():
+    import importlib.util
+    deps = {"PyQt6": "PyQt6", "PIL": "pillow", "pystray": "pystray", "win10toast": "win10toast"}
+    missing = [pip for mod, pip in deps.items() if importlib.util.find_spec(mod) is None]
+    if not missing:
+        return  # tout est déjà installé
+
+    # Popup tkinter (toujours dispo avec Python)
+    import tkinter as tk
+    from tkinter import messagebox
+    root = tk.Tk(); root.withdraw()
+    names = ", ".join(missing)
+    ok = messagebox.askyesno(
+        "osu! Tool — Installation requise",
+        f"Les modules suivants sont manquants :\n\n  {names}\n\n"
+        f"Voulez-vous les installer automatiquement ?\n"
+        f"(Une fenêtre noire apparaîtra brièvement)",
+        icon="question"
+    )
+    root.destroy()
+    if not ok:
+        sys.exit(0)
+
+    # Installation silencieuse
+    for pkg in missing:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", pkg],
+                              creationflags=0x08000000 if sys.platform == "win32" else 0)
+
+    # Relancer le script après installation
+    import os
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+_bootstrap()
+# ─────────────────────────────────────────────────────────────────────────────
+
 from pathlib import Path
 from typing import Callable
 import base64
