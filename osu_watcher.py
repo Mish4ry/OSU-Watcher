@@ -2,13 +2,15 @@
 import sys, subprocess
 
 def _bootstrap():
-    import importlib.util
-    deps = {"PyQt6": "PyQt6", "PIL": "pillow", "pystray": "pystray", "win10toast": "win10toast"}
+    import importlib.util, sys
+    deps = {"PyQt6": "PyQt6", "PIL": "pillow", "pystray": "pystray"}
+    if sys.platform == "win32":
+        deps["win10toast"] = "win10toast"
+
     missing = [pip for mod, pip in deps.items() if importlib.util.find_spec(mod) is None]
     if not missing:
-        return  # tout est déjà installé
+        return
 
-    # Popup tkinter (toujours dispo avec Python)
     import tkinter as tk
     from tkinter import messagebox
     root = tk.Tk(); root.withdraw()
@@ -24,13 +26,12 @@ def _bootstrap():
     if not ok:
         sys.exit(0)
 
-    # Installation silencieuse
+    import os
+    flags = 0x08000000 if sys.platform == "win32" else 0
     for pkg in missing:
         subprocess.check_call([sys.executable, "-m", "pip", "install", pkg],
-                              creationflags=0x08000000 if sys.platform == "win32" else 0)
+                              creationflags=flags)
 
-    # Relancer le script après installation
-    import os
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 _bootstrap()
@@ -126,9 +127,22 @@ def format_size(n: int) -> str:
         n /= 1024
     return f"{n:.1f} To"
 
-CONFIG_PATH           = Path.home() / "AppData" / "Local" / "osu_tool" / "config.json"
-_DEFAULT_REPLAYS_DEST = Path.home() / "Desktop" / "OSU!" / "replays"
-_DEFAULT_BG_DEST      = Path.home() / "Desktop" / "OSU!" / "Miniature"
+def _config_dir() -> Path:
+    if sys.platform == "win32":
+        base = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local")))
+    elif sys.platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
+    else:
+        base = Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config")))
+    return base / "osu_tool"
+
+def _desktop() -> Path:
+    d = Path.home() / "Desktop"
+    return d if d.exists() else Path.home()
+
+CONFIG_PATH           = _config_dir() / "config.json"
+_DEFAULT_REPLAYS_DEST = _desktop() / "OSU!" / "replays"
+_DEFAULT_BG_DEST      = _desktop() / "OSU!" / "Miniature"
 
 def _cfg_load() -> dict:
     try:
@@ -168,7 +182,26 @@ def detect() -> Path | None:
     if "osu_path" in c:
         p = Path(c["osu_path"])
         if p.exists() and (p / "Replays").exists(): return p
-    for candidate in [Path.home() / "AppData" / "Local" / "osu!", Path("C:/Games/osu!"), Path("D:/osu!"), Path("E:/osu!")]:
+
+    candidates = []
+    if sys.platform == "win32":
+        candidates = [
+            Path.home() / "AppData" / "Local" / "osu!",
+            Path("C:/Games/osu!"), Path("D:/osu!"), Path("E:/osu!"),
+            Path("C:/osu!"), Path("D:/Games/osu!"),
+        ]
+    elif sys.platform == "darwin":
+        candidates = [
+            Path.home() / "Library" / "Application Support" / "osu!",
+            Path("/Applications/osu!.app/Contents/Resources"),
+        ]
+    else:  # Linux
+        candidates = [
+            Path.home() / ".local" / "share" / "osu-wine",
+            Path.home() / "osu!",
+            Path.home() / ".osu",
+        ]
+    for candidate in candidates:
         if candidate.exists() and (candidate / "Replays").exists(): return candidate
     return None
 
@@ -253,19 +286,32 @@ except ImportError:
 
 def notify(title: str, msg: str, duration: int = 4):
     def _do():
-        if _TOAST_OK:
-            try: ToastNotifier().show_toast(title, msg, duration=duration, threaded=True); return
+        # Windows : win10toast ou PowerShell
+        if sys.platform == "win32":
+            if _TOAST_OK:
+                try: ToastNotifier().show_toast(title, msg, duration=duration, threaded=True); return
+                except Exception: pass
+            try:
+                ps = (
+                    "Add-Type -AssemblyName System.Windows.Forms;"
+                    "$n=New-Object System.Windows.Forms.NotifyIcon;"
+                    "$n.Icon=[System.Drawing.SystemIcons]::Information;$n.Visible=$true;"
+                    f"$n.ShowBalloonTip({duration*1000},'{title.replace(chr(39),chr(39)*2)}','{msg.replace(chr(39),chr(39)*2)}',"
+                    f"[System.Windows.Forms.ToolTipIcon]::Info);Start-Sleep -Milliseconds {duration*1000+1000};$n.Dispose()"
+                )
+                subprocess.Popen(["powershell", "-WindowStyle", "Hidden", "-Command", ps], creationflags=0x08000000)
             except Exception: pass
-        try:
-            ps = (
-                "Add-Type -AssemblyName System.Windows.Forms;"
-                "$n=New-Object System.Windows.Forms.NotifyIcon;"
-                "$n.Icon=[System.Drawing.SystemIcons]::Information;$n.Visible=$true;"
-                f"$n.ShowBalloonTip({duration*1000},'{title.replace(chr(39),chr(39)*2)}','{msg.replace(chr(39),chr(39)*2)}',"
-                f"[System.Windows.Forms.ToolTipIcon]::Info);Start-Sleep -Milliseconds {duration*1000+1000};$n.Dispose()"
-            )
-            subprocess.Popen(["powershell", "-WindowStyle", "Hidden", "-Command", ps], creationflags=0x08000000)
-        except Exception: pass
+        # macOS : osascript
+        elif sys.platform == "darwin":
+            try:
+                subprocess.Popen(["osascript", "-e",
+                    f'display notification "{msg}" with title "{title}"'])
+            except Exception: pass
+        # Linux : notify-send
+        else:
+            try:
+                subprocess.Popen(["notify-send", title, msg])
+            except Exception: pass
     threading.Thread(target=_do, daemon=True).start()
 
 def _sep() -> QFrame:
@@ -584,10 +630,15 @@ class App(QMainWindow):
     def _open_dest_folder(self):
         dest = self._last_dest or config.get_replays_dest().parent
         dest.mkdir(parents=True, exist_ok=True)
-        try: subprocess.Popen(["explorer", str(dest)])
-        except Exception:
-            try: os.startfile(str(dest))
-            except Exception as ex: self.log(f"⚠️  Cannot open folder: {ex}")
+        try:
+            if sys.platform == "win32":
+                subprocess.Popen(["explorer", str(dest)])
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", str(dest)])
+            else:
+                subprocess.Popen(["xdg-open", str(dest)])
+        except Exception as ex:
+            self.log(f"⚠️  Cannot open folder: {ex}")
 
     def _on_export_log(self):
         if not self._log_entries: self.log("⚠️  Log is empty."); return
